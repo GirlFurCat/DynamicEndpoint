@@ -25,7 +25,39 @@ namespace DynamicEndpoint.Helpers
                     Title = "Dynamic API",
                     Version = "v1"
                 },
-                Paths = new OpenApiPaths()
+                Paths = new OpenApiPaths(),
+                // 添加安全组件定义
+                Components = new OpenApiComponents
+                {
+                    SecuritySchemes = new Dictionary<string, OpenApiSecurityScheme>
+                    {
+                        ["Bearer"] = new OpenApiSecurityScheme
+                        {
+                            Description = "请输入 JWT Token：Bearer {token}",
+                            Name = "Authorization",
+                            In = ParameterLocation.Header,
+                            Type = SecuritySchemeType.Http,
+                            Scheme = "bearer",
+                            BearerFormat = "JWT"
+                        }
+                    }
+                },
+
+                // 添加全局安全要求
+                SecurityRequirements = new List<OpenApiSecurityRequirement>
+                {
+                    new OpenApiSecurityRequirement
+                    {
+                        [new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        }] = new List<string>()
+                    }
+                }
             };
 
             // 获取终结点

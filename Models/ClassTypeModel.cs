@@ -18,7 +18,7 @@ namespace DynamicEndpoint.Models
 
         public string Parameter { get; set; } = null!;
 
-        public string ParameterType { get; set; } = null;
+        public string ParameterType { get; set; } = null!;
 
         public string? AssemblyName { get; set; }
 
