@@ -21,8 +21,8 @@ namespace DynamicEndpoint.Configuration
                 else
                     return Results.BadRequest();
                 return Results.Ok();
-            }).WithDescription("增加新路由");
-            //.RequireAuthorization();
+            }).WithDescription("增加新路由")
+            .RequireAuthorization();
 
             app.MapPut("/api/admin/route", async ([FromServices] RouteService service, [FromServices] RouteEntityService routeEntityService, [FromServices] EndpointFactory endpointFactory, RouteEntityDto routeEntity) =>
             {
