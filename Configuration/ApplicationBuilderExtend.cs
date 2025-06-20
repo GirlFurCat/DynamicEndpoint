@@ -24,8 +24,9 @@ namespace DynamicEndpoint.Configuration
             }).WithDescription("增加新路由")
             .RequireAuthorization();
 
-            app.MapPut("/api/admin/route", async ([FromServices] RouteService service, [FromServices] RouteEntityService routeEntityService, [FromServices] EndpointFactory endpointFactory, RouteEntityDto routeEntity) =>
+            app.MapPut("/api/admin/{id}/route", async ([FromServices] RouteService service, [FromServices] RouteEntityService routeEntityService, [FromServices] EndpointFactory endpointFactory, RouteEntityDto routeEntity, [FromRoute]int id) =>
             {
+                routeEntity.id = id;
                 if (await service.UpdateRouteAsync(routeEntity))
                     await routeEntityService.NotificationChangeAsync(endpointFactory);
                 else
@@ -34,7 +35,7 @@ namespace DynamicEndpoint.Configuration
             }).WithDescription("更新指定路由")
             .RequireAuthorization();
 
-            app.MapDelete("/api/admin/route", async ([FromServices] RouteService service, [FromServices] RouteEntityService routeEntityService, [FromServices] EndpointFactory endpointFactory, int id) =>
+            app.MapDelete("/api/admin/{id}/route", async ([FromServices] RouteService service, [FromServices] RouteEntityService routeEntityService, [FromServices] EndpointFactory endpointFactory, int id) =>
             {
                 if (await service.DeleteRouteAsync(id))
                     await routeEntityService.NotificationChangeAsync(endpointFactory);

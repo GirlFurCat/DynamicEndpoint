@@ -46,6 +46,19 @@ namespace DynamicEndpoint.Helpers
             DtoLoadContext dtoLoad = new();
             Assembly assembly = dtoLoad.Load(path);
             Contexts.Add(path, dtoLoad);
+
+            //前缀完全一致时卸载旧程序集并删除
+            int lastIndex = path.LastIndexOf("_");
+            string prefix = path.Substring(0, lastIndex);
+            var unloadAssemblys = Contexts.Where(x => x.Key.Contains(prefix)).ToDictionary();
+            foreach(var item in unloadAssemblys)
+            {
+                //卸载前缀相同的程序集
+                item.Value.Unload();
+                Contexts.Remove(item.Key);
+                ClassTypeDic.Remove(item.Key);
+            }
+
             return assembly;
         }
 
