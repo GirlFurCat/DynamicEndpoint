@@ -17,6 +17,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Identity.Client;
 using Microsoft.OpenApi.Models;
+using NSwag.AspNetCore;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System;
 using System.Collections.Generic;
@@ -60,7 +61,14 @@ namespace DynamicEndpoint
             Services.AddHealthChecks()
                 .AddCheck<ConfiguraHealthCheck>("Configura");
 
+            
             return Services;
+        }
+
+        public static SwaggerUiSettings AddNswagByDynamicEndpoint(this SwaggerUiSettings options)
+        {
+            options.SwaggerRoutes.Add(new SwaggerUiRoute("dynamic API", "/dynamic/swagger.json"));
+            return options;
         }
 
         public static SwaggerUIOptions AddSwaggerByDynamicEndpoint(this SwaggerUIOptions options)

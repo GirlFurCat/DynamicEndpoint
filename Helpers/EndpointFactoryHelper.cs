@@ -28,9 +28,9 @@ namespace DynamicEndpoint.Helpers
 
             ClassTypeModel classType = new ClassTypeModel();
             classType.ClassName = $"{route.method}_{route.path.Replace("/", "_").Replace("{", "_").Replace("}", "_")}";
-            classType.ClassCode = isRouteOrQuery ? string.Empty: GenerateDtoSource(classType.ClassName, route.parameter.Where(item => !route.path.Contains($"{{{item.Key}}}")).ToDictionary());
+            classType.ClassCode = isRouteOrQuery ? string.Empty : GenerateDtoSource(classType.ClassName, route.parameter.Where(item => !route.path.Contains($"{{{item.Key}}}") && !IsAutoProperty(item.Value)).ToDictionary());
 
-            var notDtoProperty = route.parameter.Where(item=> route.path.Contains($"{{{item.Key}}}") || isRouteOrQuery).ToDictionary();
+            var notDtoProperty = route.parameter.Where(item => (route.path.Contains($"{{{item.Key}}}") || isRouteOrQuery) && !IsAutoProperty(item.Value)).ToDictionary();
             string paraValuesStr = ParameterValueStr(notDtoProperty);
             if (!string.IsNullOrEmpty(paraValuesStr))
                 paraValuesStr += ",";
@@ -52,7 +52,10 @@ namespace DynamicEndpoint.Helpers
                 paraValuesStr += $"{classType.ClassName},";
             }
 
-            string script = $@"(Delegate)(Func<{paraValuesStr} Task<ActionResult>>)(async ({paraKeysStr}) => await apiTemplate.{method}(new {{{funcPara}}}, ""{route.sql}""))";
+            if (!string.IsNullOrEmpty(paraKeysStr))
+                paraKeysStr += ",";
+
+            string script = $@"(Delegate)(Func<{paraValuesStr} IHttpContextAccessor, Task<ActionResult>>)(async ({paraKeysStr} [FromServices] contextAccessor) =>{{ var user = contextAccessor.HttpContext!.User; return await apiTemplate.{method}(new {{{funcPara}}}, ""{route.sql}""); }})";
 
             classType.Parameter = paraKeysStr;
             classType.ParameterType = paraValuesStr;
@@ -106,8 +109,9 @@ namespace DynamicEndpoint.Helpers
             var routeParameter = para.Where(x => url.Contains($"{{{x.Key}}}")).ToDictionary();
             parameters.AddRange(BuilderPathParameter(routeParameter));
 
-            if (method.ToLower() == "get" || method.ToLower() == "delete") {
-                foreach(var item in para)
+            if (method.ToLower() == "get" || method.ToLower() == "delete")
+            {
+                foreach (var item in para)
                 {
                     if (!routeParameter.Keys.Contains(item.Key))
                         queryOrRoute.TryAdd(item.Key, item.Value);
@@ -236,7 +240,17 @@ namespace DynamicEndpoint.Helpers
         /// <param name="IsAuthorize"></param>
         /// <param name="description"></param>
         /// <returns></returns>
-        public EndpointMetadataCollection endpointMetadata(RouteEntity route) => route.authorization ? new EndpointMetadataCollection(BuilderHttpMethodMetadata(route.method), BuilderDescription(route.method, route.introduction, route.parameter, route.path), BuilderAuthorize) : new EndpointMetadataCollection(BuilderHttpMethodMetadata(route.method), BuilderDescription(route.method, route.introduction, route.parameter, route.path));
+        public EndpointMetadataCollection endpointMetadata(RouteEntity route)
+        {
+            if (route.authorization)
+            {
+                return new EndpointMetadataCollection(BuilderHttpMethodMetadata(route.method), BuilderDescription(route.method, route.introduction, route.parameter, route.path), BuilderAuthorize);
+            }
+            else
+            {
+                return new EndpointMetadataCollection(BuilderHttpMethodMetadata(route.method), BuilderDescription(route.method, route.introduction, route.parameter, route.path));
+            }
+        }
 
         /// <summary>
         /// 将Values转化为字符串
@@ -245,7 +259,7 @@ namespace DynamicEndpoint.Helpers
         /// <returns></returns>
         private string ParameterValueStr(Dictionary<string, string> parameters)
         {
-            return string.Join(", ", parameters.Values.Select(x => x.Split('|')[0]));
+            return string.Join(", ", parameters.Values.Where(x=> !IsAutoProperty(x)).Select(x => x.Split('|')[0]));
         }
 
         /// <summary>
@@ -261,11 +275,15 @@ namespace DynamicEndpoint.Helpers
             {
                 if (url.Contains($"{{{item}}}"))
                 {
-                    result += $", [FromRoute]{item}";
+                    result += $", [FromRoute] {item}";
                     continue;
                 }
+
+                if (IsAutoProperty(parameters[item]))
+                    continue;
+
                 if (method.ToLower() == "get" || method.ToLower() == "delete")
-                    result += $", [FromQuery]{item}";
+                    result += $", [FromQuery] {item}";
             }
 
             return !string.IsNullOrEmpty(result) ? result.Substring(2) : string.Empty;
@@ -289,7 +307,9 @@ namespace DynamicEndpoint.Helpers
             sb.AppendLine("  {");
             foreach (var p in props)
             {
-                sb.AppendLine($"    public {p.Value.Split('|')[0]} {p.Key} {{ get; set; }}");
+                string attribute = IsAutoProperty(p.Value) ? ("[FromClaim(\"" + p.Key + "\")]") : "";
+                string valueStr = $"    {attribute}public {p.Value.Split('|')[0]} {p.Key} {{ get; set; }}";
+                sb.AppendLine(valueStr);
             }
             sb.AppendLine("  }");
             sb.AppendLine("}");
@@ -313,9 +333,18 @@ namespace DynamicEndpoint.Helpers
             {
                 var dtoPropertyValue = string.Join(", ", parameters.Where(item => !NotDtoProperty.ContainsKey(item.Key)).Select(item =>
                 {
-                    string[] para = item.Value.Split('|');
-                    string propertyName = $"{dtoName}.{item.Key}";
-                    return para.Length > 1 && para[1].ToLower() == "like" ? $@"{item.Key}={propertyName} is null ? null : $""%{{{propertyName}}}%""" : $"{propertyName}";
+                    if (IsAutoProperty(item.Value))
+                    {
+
+                        string propertyName = item.Key.Contains("ClaimTypes") ? item.Key : $"\"{item.Key}\"";
+                        return $"{item.Key.Replace(".", "")}=user.FindFirst({propertyName}).Value";
+                    }
+                    else
+                    {
+                        string[] para = item.Value.Split('|');
+                        string propertyName = $"{dtoName}.{item.Key}";
+                        return para.Length > 1 && para[1].ToLower() == "like" ? $@"{item.Key}={propertyName} is null ? null : $""%{{{propertyName}}}%""" : $"{propertyName}";
+                    }
                 }));
                 if (!string.IsNullOrEmpty(value))
                     value += ", ";
@@ -349,6 +378,21 @@ namespace DynamicEndpoint.Helpers
                     return "PutAsync";
             }
             throw new InvalidOperationException(nameof(EndpointFactory));
+        }
+
+        /// <summary>
+        /// 判断参数是否从Token解析注入
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private bool IsAutoProperty(string value)
+        {
+            string[] array = value.Split('|');
+            if (array.Length < 3)
+                return false;
+            if (array[2] == "1")
+                return true;
+            return false;
         }
     }
 }

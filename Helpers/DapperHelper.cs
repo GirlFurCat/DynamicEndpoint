@@ -1,8 +1,10 @@
-﻿using Dapper;
+﻿using Ardalis.Result;
+using Dapper;
 using DynamicEndpoint.Configuration;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Reflection;
 
 namespace DynamicEndpoint.Helpers
@@ -43,8 +45,13 @@ namespace DynamicEndpoint.Helpers
                 if (pageIndexInfo is null || pageSizeInfo is null)
                     return await _readConn.QueryAsync(sql, Entity);
 
-                var result = await _readConn.QueryAsync(PageSql(sql, "Id", (int)pageIndexInfo.GetValue(Entity)!, (int)pageSizeInfo.GetValue(Entity)!), Entity);
-                return result;
+                int pageIndex = (int)pageIndexInfo.GetValue(Entity)!;
+                int pageSize = (int)pageSizeInfo.GetValue(Entity)!;
+                int total = await _readConn.ExecuteScalarAsync<int>($"SELECT COUNT(0) FROM ({sql}) AS TotalCount", Entity);
+                var result = await _readConn.QueryAsync(PageSql(sql, "Id", pageIndex, pageSize), Entity);
+
+                PagedInfo pagedInfo = new PagedInfo(pageIndex,pageSize, (int)Math.Ceiling(1.0 * total / pageSize), total);
+                return new PagedResult<dynamic>(pagedInfo, result);
             }
             catch (Exception ex)
             {
