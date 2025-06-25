@@ -12,6 +12,29 @@ namespace DynamicEndpoint.Helpers
 {
     public static class ExtendFunc
     {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="strings"></param>
+        /// <param name="Symbol"></param>
+        /// <returns></returns>
+        public static string ToString(this IEnumerable<string> strings, char Symbol)
+        {
+            return string.Join(Symbol, strings);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="strings"></param>
+        /// <param name="Symbol"></param>
+        /// <returns></returns>
+        public static string ToString(this IList<string> strings, char Symbol)
+        {
+            return string.Join(Symbol, strings);
+        }
+
         /// <summary>
         /// 填充默认值
         /// </summary>

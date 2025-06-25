@@ -390,7 +390,7 @@ namespace DynamicEndpoint.Helpers
             string[] array = value.Split('|');
             if (array.Length < 3)
                 return false;
-            if (array[2] == "1")
+            if (array[2].ToLower() == "claim")
                 return true;
             return false;
         }

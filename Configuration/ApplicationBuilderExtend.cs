@@ -16,10 +16,11 @@ namespace DynamicEndpoint.Configuration
         {
             app.MapPost("/api/admin/route", async ([FromServices] RouteService service, [FromServices] RouteEntityService routeEntityService, [FromServices] EndpointFactory endpointFactory, RouteEntityDto routeEntity) =>
             {
-                if (await service.AddRouteAsync(routeEntity))
+                var result = await service.AddRouteAsync(routeEntity);
+                if (result.IsSuccess)
                     await routeEntityService.NotificationChangeAsync(endpointFactory);
                 else
-                    return Results.BadRequest();
+                    return Results.BadRequest(result);
                 return Results.Ok();
             }).WithDescription("增加新路由")
             .RequireAuthorization();
@@ -27,20 +28,22 @@ namespace DynamicEndpoint.Configuration
             app.MapPut("/api/admin/{id}/route", async ([FromServices] RouteService service, [FromServices] RouteEntityService routeEntityService, [FromServices] EndpointFactory endpointFactory, RouteEntityDto routeEntity, [FromRoute]int id) =>
             {
                 routeEntity.id = id;
-                if (await service.UpdateRouteAsync(routeEntity))
+                var result = await service.UpdateRouteAsync(routeEntity);
+                if (result.IsSuccess)
                     await routeEntityService.NotificationChangeAsync(endpointFactory);
                 else
-                    return Results.BadRequest();
+                    return Results.BadRequest(result);
                 return Results.Ok();
             }).WithDescription("更新指定路由")
             .RequireAuthorization();
 
             app.MapDelete("/api/admin/{id}/route", async ([FromServices] RouteService service, [FromServices] RouteEntityService routeEntityService, [FromServices] EndpointFactory endpointFactory, int id) =>
             {
-                if (await service.DeleteRouteAsync(id))
+                var result = await service.DeleteRouteAsync(id);
+                if (result.IsSuccess)
                     await routeEntityService.NotificationChangeAsync(endpointFactory);
                 else
-                    return Results.BadRequest();
+                    return Results.BadRequest(result);
                 return Results.Ok();
             }).WithDescription("删除指定路由")
             .RequireAuthorization();
