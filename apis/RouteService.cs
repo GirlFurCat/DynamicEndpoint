@@ -115,6 +115,9 @@ public class RouteService(RouteAggregateRoot routeAggregate, IHttpContextAccesso
                         case 1:
                             if (!string.IsNullOrEmpty(valueArray[i]) && valueArray[i].ToLower() != "like")
                                 error.Add($"参数[{param.Key}]的模糊查询标识非法");
+
+                            if (!string.IsNullOrEmpty(valueArray[i]) && !string.IsNullOrEmpty(route.method) && route.method.ToLower() != "get")
+                                error.Add($"非Get请求下，参数[{param.Key}]的模糊查询标识非法");
                             break;
                         case 2:
                             if (!string.IsNullOrEmpty(valueArray[i]) && valueArray[i].ToLower() != "claim")

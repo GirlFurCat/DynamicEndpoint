@@ -335,9 +335,8 @@ namespace DynamicEndpoint.Helpers
                 {
                     if (IsAutoProperty(item.Value))
                     {
-
                         string propertyName = item.Key.Contains("ClaimTypes") ? item.Key : $"\"{item.Key}\"";
-                        return $"{item.Key.Replace(".", "")}=user.FindFirst({propertyName}).Value";
+                        return $"{item.Key.Replace(".", "")}=user.FindFirstValue({propertyName})";
                     }
                     else
                     {
