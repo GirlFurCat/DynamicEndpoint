@@ -113,7 +113,7 @@ namespace DynamicEndpoint.Helpers
             {
                 foreach (var item in para)
                 {
-                    if (!routeParameter.Keys.Contains(item.Key))
+                    if (!routeParameter.Keys.Contains(item.Key) && !IsAutoProperty(item.Value))
                         queryOrRoute.TryAdd(item.Key, item.Value);
                 }
                 parameters.AddRange(BuilderQueryParameter(queryOrRoute));
@@ -123,7 +123,7 @@ namespace DynamicEndpoint.Helpers
             {
                 foreach (var item in para)
                 {
-                    if (!routeParameter.Keys.Contains(item.Key))
+                    if (!routeParameter.Keys.Contains(item.Key) && !IsAutoProperty(item.Value))
                         body.TryAdd(item.Key, item.Value);
                 }
                 requestBody = BuilderRequestBody(body);

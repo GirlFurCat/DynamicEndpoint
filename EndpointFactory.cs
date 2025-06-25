@@ -43,8 +43,6 @@ namespace DynamicEndpoint
                 "Microsoft.AspNetCore.Http",
                 "DynamicEndpoint.apis",
                 "DynamicEndpoint.Models",
-                "DynamicEndpoint.Attributes",
-                "DynamicEndpoint.EndpointFilter",
                 "System.Threading.Tasks",
                 "System.Security.Claims",
                 "Microsoft.AspNetCore.Mvc",
