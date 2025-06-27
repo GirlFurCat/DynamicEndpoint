@@ -24,10 +24,17 @@ namespace DynamicEndpoint.HostedServices
         private void RouteEntitys_ChangeDataActive((List<RouteEntity> addEndpoint, List<RouteEntity> removeEndpoint) obj, EndpointFactory endpointFactory)
         {
             //移除旧端点
-            obj.removeEndpoint.ForEach(x => _endpointDataSource.RemoveEndpoint($"{x.method}-{x.path}"));
+            foreach (var x in obj.addEndpoint)
+            {
+                _endpointDataSource.RemoveEndpoint($"{x.method}-{x.path}");
+            }
 
             //添加新端点
-            obj.addEndpoint.ForEach(async x => _endpointDataSource.AddEndpoint(await endpointFactory.CreateAsync(x)));
+            foreach (var x in obj.addEndpoint)
+            {
+                var endpoint = endpointFactory.CreateAsync(x).GetAwaiter().GetResult();
+                _endpointDataSource.AddEndpoint(endpoint);
+            }
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
