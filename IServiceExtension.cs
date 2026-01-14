@@ -71,6 +71,12 @@ namespace DynamicEndpoint
             return options;
         }
 
+        public static SwaggerUiSettings AddNswagByDefaultEndpoint(this SwaggerUiSettings options)
+        {
+            options.SwaggerRoutes.Add(new SwaggerUiRoute("default API", "/swagger/v1/swagger.json"));
+            return options;
+        }
+
         public static SwaggerUIOptions AddSwaggerByDynamicEndpoint(this SwaggerUIOptions options)
         {
             options.SwaggerEndpoint("/dynamic/swagger.json", "dynamic API");
