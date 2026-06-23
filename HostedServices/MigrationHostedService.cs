@@ -26,12 +26,8 @@ namespace DynamicEndpoint.HostedServices
             var db = scope.ServiceProvider.GetRequiredService<dbContext>();
             try
             {
-                // 只有当存在未应用的迁移时才执行 Migrate
-                var pending = await db.Database.GetPendingMigrationsAsync(cancellationToken);
-                if (pending.Any())
-                {
-                    await db.Database.MigrateAsync(cancellationToken);
-                }
+                // 迁移本身就是幂等的，所以可以直接调用
+                await db.Database.MigrateAsync(cancellationToken);
             }
             catch (Exception ex)
             {
